@@ -1,0 +1,21 @@
+{
+  "name": "otp-bot-atlantic",
+  "version": "1.0.0",
+  "description": "Bot Telegram Auto Order OTP with Atlantic H2H Integration",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.3",
+    "gramjs": "^2.26.1",
+    "node-fetch": "^2.7.0",
+    "qrcode": "^1.5.3",
+    "canvas": "^2.11.2",
+    "string-random": "^0.1.3",
+    "input": "^1.0.1"
+  },
+  "author": "Gemini AI",
+  "license": "ISC"
+}
