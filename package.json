@@ -1,15 +1,9 @@
 {
   "name": "otp-bot-atlantic",
   "version": "1.0.0",
-  "description": "Bot Telegram Auto Order OTP",
   "main": "index.js",
-  "type": "commonjs",
   "scripts": {
-    "start": "node index.js",
-    "install": "npm install"
-  },
-  "engines": {
-    "node": "20.x"
+    "start": "node index.js"
   },
   "dependencies": {
     "telegraf": "^4.16.3",
