@@ -1,9 +1,14 @@
 {
-  "name": "otp-bot-atlantic",
+  "name": "otp-atlantic-fix",
   "version": "1.0.0",
+  "description": "Bot OTP Atlantic",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.js"
+  },
+  "engines": {
+    "node": "20.x"
   },
   "dependencies": {
     "telegraf": "^4.16.3",
