@@ -1,17 +1,22 @@
 {
-  "name": "atlantic-ppob-bot",
+  "name": "lusi-ppob-atlantic-premium",
   "version": "1.0.0",
-  "description": "Bot Telegram PPOB Atlantic Gateway dengan fitur lengkap",
+  "description": "Bot PPOB Atlantic Gateway Premium for Yang Mulia",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "start": "node bot.js"
   },
+  "keywords": [
+    "ppob",
+    "telegram-bot",
+    "atlantic-h2h",
+    "gateway"
+  ],
+  "author": "LusiGPT",
+  "license": "MIT",
   "dependencies": {
     "axios": "^1.6.2",
-    "node-telegram-bot-api": "^0.64.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
+    "form-data": "^4.0.0",
+    "telegraf": "^4.15.3"
   }
 }
