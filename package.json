@@ -1,22 +1,23 @@
 {
-  "name": "lusi-ppob-atlantic-premium",
+  "name": "otp-bot-atlantic",
   "version": "1.0.0",
-  "description": "Bot PPOB Atlantic Gateway Premium for Yang Mulia",
-  "main": "bot.js",
+  "description": "Telegram OTP Bot with MongoDB",
+  "main": "index.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
-  "keywords": [
-    "ppob",
-    "telegram-bot",
-    "atlantic-h2h",
-    "gateway"
-  ],
-  "author": "LusiGPT",
-  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
-    "axios": "^1.6.2",
-    "form-data": "^4.0.0",
-    "telegraf": "^4.15.3"
+    "telegraf": "4.16.3",
+    "telegram": "2.22.2",
+    "axios": "^1.6.0",
+    "qrcode": "1.5.3",
+    "string-random": "0.1.3",
+    "socks": "2.8.1",
+    "input": "1.0.1",
+    "mongoose": "^8.0.0"
   }
 }
