@@ -30,6 +30,31 @@ const bot = new Telegraf(CONFIG.BOT_TOKEN);
 bot.use(session());
 
 // ==========================================
+// 🎨 EMOJI CONFIGURATION (Premium Custom Emoji IDs)
+// ==========================================
+const EMOJI = {
+    BACK: '5258236805890710909',      // 🔚 premium
+    WARNING: '5447644880824181073',   // ⚠️ premium
+    DIAMOND: '5427168083074628963',   // 💎 premium
+    STAR: '5438496463044752972',      // ⭐ premium
+    LIGHTNING: '5456140674028019486', // ⚡ premium
+    EXCLAMATION_1: '5274099962655816924',  // ❗ premium
+    EXCLAMATION_2: '5440660757194744323',  // ‼️ premium
+    ROCKET: '5188481279963715781',    // 🚀 premium
+    MONEY_BAG: '5348503265967355284', // 💰 premium
+    PIN: '5397782960512444700',       // 📌 premium
+    BELL: '5990205245806875298',      // 🔔 premium
+    CHECKMARK: '5992265524438896830', // ✅ premium
+    DOLLAR: '5409048419211682843',    // 💲 premium
+    PLUS: '5397916757333654639',       // ➕ premium
+    X: '5210952531676504517',         // ❌ premium
+    WALLET: '5258204546391351475',    // 👛 premium
+    DANA: '6084363758002505799',      // DANA logo
+    QRIS: '6084682277072144595',      // QRIS logo
+    OVO: '6084653543740934225'        // OVO logo
+};
+
+// ==========================================
 // 🗄️ MONGOOSE SCHEMAS
 // ==========================================
 
@@ -257,6 +282,16 @@ const UI = {
     }
 };
 
+// Helper untuk membuat entity custom emoji
+function createEmojiEntity(offset, length, emojiId) {
+    return {
+        offset: offset,
+        length: length,
+        type: 'custom_emoji',
+        custom_emoji_id: emojiId
+    };
+}
+
 // ==========================================
 // 🚀 BOT FUNCTIONS
 // ==========================================
@@ -312,24 +347,17 @@ async function renderHome(ctx) {
         ]);
     }
 
+    const captionText = `Halo <b>${ctx.from.first_name}</b> 👋\n\nSelamat datang. Di sini kamu bisa membeli <b>Akun NOKTEL Siap Pakai</b> yang sudah siap login dan dikirim otomatis setelah pembayaran berhasil.\n\n💳 <b>Saldo Kamu</b>\n<code>Rp ${user.balance.toLocaleString()}</code>\n\n📌 <b>Ketentuan</b>\n• Pastikan saldo mencukupi sebelum checkout.\n• Periksa pesanan dengan teliti.\n• Tidak menerima pembatalan/refund setelah pembayaran.\n• Simpan data akun yang diterima dengan aman.\n\nSilakan pilih menu di bawah untuk mulai bertransaksi 👇`;
+
+    const entities = [
+        createEmojiEntity(captionText.indexOf('💳'), 2, EMOJI.MONEY_BAG),
+        createEmojiEntity(captionText.indexOf('📌'), 2, EMOJI.PIN)
+    ];
+
     return ctx.replyWithPhoto(CONFIG.MAIN_IMG, {
-        caption: UI.q(
-`Halo <b>${ctx.from.first_name}</b> 👋
-
-Selamat datang. Di sini kamu bisa membeli <b>Akun NOKTEL Siap Pakai</b> yang sudah siap login dan dikirim otomatis setelah pembayaran berhasil.
-
-💳 <b>Saldo Kamu</b>
-<code>Rp ${user.balance.toLocaleString()}</code>
-
-📌 <b>Ketentuan</b>
-• Pastikan saldo mencukupi sebelum checkout.
-• Periksa pesanan dengan teliti.
-• Tidak menerima pembatalan/refund setelah pembayaran.
-• Simpan data akun yang diterima dengan aman.
-
-Silakan pilih menu di bawah untuk mulai bertransaksi 👇`
-        ),
+        caption: UI.q(captionText),
         parse_mode: 'HTML',
+        caption_entities: entities,
         ...Markup.inlineKeyboard(buttons)
     });
 }
@@ -338,17 +366,17 @@ async function sendSuccessNotif(ctx, cat, price) {
     const stocks = await getStocks(cat);
     const totalStock = stocks.length;
 
-    const messageText = `<blockquote>
-<b>🚀 NEW STOCK BERHASIL DITAMBAHKAN!</b>
-━━━━━━━━━━━━━━━━━━━━
-📂 <b>Kategori:</b> ID-${cat}
-💰 <b>Harga:</b> Rp ${price.toLocaleString()}
-📦 <b>Total Stok Tersedia:</b> ${totalStock} Akun
-🕒 <b>Update:</b> ${new Date().toLocaleString()}
-━━━━━━━━━━━━━━━━━━━━
-🔥 <b>Siap diproses otomatis oleh bot</b>
-⚡ <i>Jangan sampai kehabisan!</i>
-</blockquote>`;
+    const messageText = `<blockquote>\n<b>🚀 NEW STOCK BERHASIL DITAMBAHKAN!</b>\n━━━━━━━━━━━━━━━━━━━━\n📂 <b>Kategori:</b> ID-${cat}\n💰 <b>Harga:</b> Rp ${price.toLocaleString()}\n📦 <b>Total Stok Tersedia:</b> ${totalStock} Akun\n🕒 <b>Update:</b> ${new Date().toLocaleString()}\n━━━━━━━━━━━━━━━━━━━━\n🔥 <b>Siap diproses otomatis oleh bot</b>\n⚡ <i>Jangan sampai kehabisan!</i>\n</blockquote>`;
+
+    const entities = [
+        createEmojiEntity(messageText.indexOf('🚀'), 2, EMOJI.ROCKET),
+        createEmojiEntity(messageText.indexOf('📂'), 2, EMOJI.PIN),
+        createEmojiEntity(messageText.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+        createEmojiEntity(messageText.indexOf('📦'), 2, EMOJI.PIN),
+        createEmojiEntity(messageText.indexOf('🕒'), 2, EMOJI.BELL),
+        createEmojiEntity(messageText.indexOf('🔥'), 2, EMOJI.LIGHTNING),
+        createEmojiEntity(messageText.indexOf('⚡'), 2, EMOJI.LIGHTNING)
+    ];
 
     const inlineKeyboard = {
         reply_markup: {
@@ -370,6 +398,7 @@ async function sendSuccessNotif(ctx, cat, price) {
                 messageText,
                 {
                     parse_mode: 'HTML',
+                    entities: entities,
                     ...inlineKeyboard
                 }
             );
@@ -402,9 +431,12 @@ bot.start(async (ctx) => {
     }
 
     if (!joined) {
+        const text = `❌ <b>AKSES DITOLAK</b>\n\nUntuk menggunakan bot, silakan join channel berikut terlebih dahulu:\n\n👉 @xStoreNoktel\n👉 @StoreRealll\n\nSetelah join, ketik /start kembali.`;
+        const entities = [createEmojiEntity(text.indexOf('❌'), 2, EMOJI.X)];
+        
         return ctx.reply(
-            UI.q(`❌ <b>AKSES DITOLAK</b>\n\nUntuk menggunakan bot, silakan join channel berikut terlebih dahulu:\n\n👉 @xStoreNoktel\n👉 @StoreRealll\n\nSetelah join, ketik /start kembali.`),
-            { parse_mode: 'HTML' }
+            UI.q(text),
+            { parse_mode: 'HTML', entities: entities }
         );
     }
 
@@ -422,7 +454,6 @@ bot.start(async (ctx) => {
         }
     } catch (err) {
         console.error("Gagal mendaftarkan user:", err.message);
-        // Jika error duplicate key, abaikan saja karena user berarti sudah ada
     }
 
     return renderHome(ctx);
@@ -462,15 +493,14 @@ bot.action('menu_order', async (ctx) => {
         await ctx.deleteMessage();
     } catch (e) {}
 
+    const text = `<b>🛒 PILIH KATEGORI ID</b>\n🟢 = Stok tersedia\n🔴 = Stok habis\n\nSilahkan pilih kategori yang tersedia.`;
+    const entities = [createEmojiEntity(text.indexOf('🛒'), 2, EMOJI.ROCKET)];
+
     await ctx.reply(
-        UI.q(
-            `<b>🛒 PILIH KATEGORI ID</b>\n` +
-            `🟢 = Stok tersedia\n` +
-            `🔴 = Stok habis\n\n` +
-            `Silahkan pilih kategori yang tersedia.`
-        ),
+        UI.q(text),
         {
             parse_mode: 'HTML',
+            entities: entities,
             ...Markup.inlineKeyboard(buttons)
         }
     );
@@ -485,8 +515,17 @@ bot.action(/^view_(\d+)$/, async (ctx) => {
     const count = stocks.length;
 
     await ctx.deleteMessage();
-    await ctx.reply(UI.q(`🛒 <b>𝗞𝗢𝗡𝗙𝗜𝗥𝗠𝗔𝗦𝗜 𝗣𝗘𝗠𝗕𝗘𝗟𝗜𝗔𝗡</b>\n\n🆔 <b>ID Produk:</b> ${id}\n🌍 <b>Negara:</b> Indonesia\n💰 <b>Harga:</b> <code>Rp ${finalPrice.toLocaleString()}</code>${promoPrice ? ' 🔥PROMO' : ''}\n📦 <b>Stok:</b> ${count}\n\nApakah Anda ingin membeli akun ini?`), {
+    
+    const text = `🛒 <b>𝗞𝗢𝗡𝗙𝗜𝗥𝗠𝗔𝗦𝗜 𝗣𝗘𝗠𝗕𝗘𝗟𝗜𝗔𝗡</b>\n\n🆔 <b>ID Produk:</b> ${id}\n🌍 <b>Negara:</b> Indonesia\n💰 <b>Harga:</b> <code>Rp ${finalPrice.toLocaleString()}</code>${promoPrice ? ' 🔥PROMO' : ''}\n📦 <b>Stok:</b> ${count}\n\nApakah Anda ingin membeli akun ini?`;
+    const entities = [
+        createEmojiEntity(text.indexOf('🛒'), 2, EMOJI.ROCKET),
+        createEmojiEntity(text.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+        createEmojiEntity(text.indexOf('📦'), 2, EMOJI.PIN)
+    ];
+
+    await ctx.reply(UI.q(text), {
         parse_mode: 'HTML',
+        entities: entities,
         ...Markup.inlineKeyboard([
             [Markup.button.callback('✅ 𝗕𝗘𝗟𝗜 𝗦𝗘𝗞𝗔𝗥𝗔𝗡𝗚', `buy_now_${id}_0`)],
             [Markup.button.callback('❌ 𝗕𝗔𝗧𝗔𝗟', 'menu_order')]
@@ -513,17 +552,23 @@ bot.action(/^buy_now_(\d+)_(\d+)$/, async (ctx) => {
     const promoPrice = await getPromo(id);
     const finalPrice = promoPrice || price;
 
-    if (user.balance < finalPrice) 
-        return ctx.answerCbQuery("⚠️ Saldo tidak cukup!", { show_alert: true });
+    if (user.balance < finalPrice) {
+        const text = "⚠️ Saldo tidak cukup!";
+        const entities = [createEmojiEntity(text.indexOf('⚠️'), 2, EMOJI.WARNING)];
+        return ctx.answerCbQuery(text, { show_alert: true, entities: entities });
+    }
 
-    if (stocks.length === 0) 
-        return ctx.answerCbQuery("⚠️ Stok habis!", { show_alert: true });
+    if (stocks.length === 0) {
+        const text = "⚠️ Stok habis!";
+        const entities = [createEmojiEntity(text.indexOf('⚠️'), 2, EMOJI.WARNING)];
+        return ctx.answerCbQuery(text, { show_alert: true, entities: entities });
+    }
 
-    const item = stocks[0]; // Ambil yang pertama
+    const item = stocks[0];
     await removeStock(id, item._id);
 
     await updateUserBalance(ctx.from.id, -finalPrice);
-    user = await getUser(ctx.from.id); // Refresh user data
+    user = await getUser(ctx.from.id);
 
     // Add to order history
     await addOrder(ctx.from.id, {
@@ -543,22 +588,24 @@ bot.action(/^buy_now_(\d+)_(\d+)$/, async (ctx) => {
         const namaUser = getNama(ctx);
 
         for (const ch of CONFIG.CHANNELS) {
+            const text = `<blockquote>\n🛒 <b>PEMBELIAN AKUN BERHASIL</b>\n\n👤 <b>Pembeli:</b> ${namaUser}\n🤖 <b>Beli ke:</b> @StoreNoktel_bot\n\n📂 <b>Kategori / ID Produk:</b> ${id}\n💰 <b>Harga:</b> Rp ${finalPrice.toLocaleString()}\n💳 <b>Sisa Saldo:</b> Rp ${user.balance.toLocaleString()}\n\n⏰ <b>Waktu:</b> ${new Date().toLocaleString()}\n</blockquote>`;
+            
+            const entities = [
+                createEmojiEntity(text.indexOf('🛒'), 2, EMOJI.ROCKET),
+                createEmojiEntity(text.indexOf('👤'), 2, EMOJI.STAR),
+                createEmojiEntity(text.indexOf('🤖'), 2, EMOJI.ROCKET),
+                createEmojiEntity(text.indexOf('📂'), 2, EMOJI.PIN),
+                createEmojiEntity(text.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+                createEmojiEntity(text.indexOf('💳'), 2, EMOJI.WALLET),
+                createEmojiEntity(text.indexOf('⏰'), 2, EMOJI.BELL)
+            ];
+
             await ctx.telegram.sendMessage(
                 ch,
-                `<blockquote>
-🛒 <b>PEMBELIAN AKUN BERHASIL</b>
-
-👤 <b>Pembeli:</b> ${namaUser}
-🤖 <b>Beli ke:</b> @StoreNoktel_bot
-
-📂 <b>Kategori / ID Produk:</b> ${id}
-💰 <b>Harga:</b> Rp ${finalPrice.toLocaleString()}
-💳 <b>Sisa Saldo:</b> Rp ${user.balance.toLocaleString()}
-
-⏰ <b>Waktu:</b> ${new Date().toLocaleString()}
-</blockquote>`,
+                text,
                 {
                     parse_mode: 'HTML',
+                    entities: entities,
                     reply_markup: {
                         inline_keyboard: [
                             [
@@ -583,19 +630,22 @@ bot.action(/^buy_now_(\d+)_(\d+)$/, async (ctx) => {
 
     await UI.loading(ctx, "⚙️ <b>𝗠𝗘𝗡𝗬𝗜𝗔𝗣𝗞𝗔𝗡 𝗡𝗢𝗠𝗢𝗥...</b>");
 
+    const text = `✅ <b>PEMBELIAN BERHASIL!</b>\n\n📂 <b>Kategori / ID Produk:</b> ${id}\n👤 <b>Nama Akun:</b> ${item.name || '-'}\n📱 <b>Nomor Telepon:</b> <code>${formattedPhone}</code>\n💰 <b>Harga:</b> <code>Rp ${finalPrice.toLocaleString()}</code>\n💳 <b>Saldo Tersisa:</b> <code>Rp ${user.balance.toLocaleString()}</code>\n\n📩 Klik tombol di bawah untuk cek SMS/OTP terbaru dari Telegram.`;
+    
+    const entities = [
+        createEmojiEntity(text.indexOf('✅'), 2, EMOJI.CHECKMARK),
+        createEmojiEntity(text.indexOf('📂'), 2, EMOJI.PIN),
+        createEmojiEntity(text.indexOf('👤'), 2, EMOJI.STAR),
+        createEmojiEntity(text.indexOf('📱'), 2, EMOJI.PIN),
+        createEmojiEntity(text.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+        createEmojiEntity(text.indexOf('💳'), 2, EMOJI.WALLET),
+        createEmojiEntity(text.indexOf('📩'), 2, EMOJI.PIN)
+    ];
+
     await ctx.replyWithPhoto(CONFIG.MAIN_IMG, {
-        caption: UI.q(
-`✅ <b>PEMBELIAN BERHASIL!</b>
-
-📂 <b>Kategori / ID Produk:</b> ${id}
-👤 <b>Nama Akun:</b> ${item.name || '-'}
-📱 <b>Nomor Telepon:</b> <code>${formattedPhone}</code>
-💰 <b>Harga:</b> <code>Rp ${finalPrice.toLocaleString()}</code>
-💳 <b>Saldo Tersisa:</b> <code>Rp ${user.balance.toLocaleString()}</code>
-
-📩 Klik tombol di bawah untuk cek SMS/OTP terbaru dari Telegram.`
-        ),
+        caption: UI.q(text),
         parse_mode: 'HTML',
+        caption_entities: entities,
         ...Markup.inlineKeyboard([
             [Markup.button.callback('📩 CEK SMS/OTP', 'cek_sms')],
             [Markup.button.callback('🗑️ HAPUS SESI', 'back_home')]
@@ -607,7 +657,9 @@ bot.action('cek_sms', async (ctx) => {
     const state = userState[ctx.from.id];
 
     if (!state || !state.purchasedAccount) {
-        return ctx.answerCbQuery("❌ Data akun tidak ditemukan", { show_alert: true });
+        const text = "❌ Data akun tidak ditemukan";
+        const entities = [createEmojiEntity(text.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.answerCbQuery(text, { show_alert: true, entities: entities });
     }
 
     const account = state.purchasedAccount;
@@ -661,7 +713,11 @@ bot.action('cek_sms', async (ctx) => {
 bot.action('menu_depo', async (ctx) => {
     await ctx.deleteMessage();
     userState[ctx.from.id] = { step: 'INPUT_DEPO' };
-    await ctx.reply(UI.q(`💳 <b>𝗗𝗘𝗣𝗢𝗦𝗜𝗧 𝗦𝗔𝗟𝗗𝗢</b>\n\nSilahkan masukkan nominal deposit.\nContoh: <code>15000</code>`), { parse_mode: 'HTML' });
+    
+    const text = `💳 <b>𝗗𝗘𝗣𝗢𝗦𝗜𝗧 𝗦𝗔𝗟𝗗𝗢</b>\n\nSilahkan masukkan nominal deposit.\nContoh: <code>15000</code>`;
+    const entities = [createEmojiEntity(text.indexOf('💳'), 2, EMOJI.MONEY_BAG)];
+    
+    await ctx.reply(UI.q(text), { parse_mode: 'HTML', entities: entities });
 });
 
 bot.on('text', async (ctx) => {
@@ -680,20 +736,30 @@ bot.on('text', async (ctx) => {
             for (let key of ownerKeys) {
                 const { to: userId, userName } = userState[key];
                 try {
+                    const replyText = `💬 Balasan dari Owner:\n\n${text}`;
+                    const entities = [createEmojiEntity(replyText.indexOf('💬'), 2, EMOJI.DIAMOND)];
+                    
                     await ctx.telegram.sendMessage(
                         userId,
-                        UI.q(`💬 Balasan dari Owner:\n\n${text}`),
-                        { parse_mode: 'HTML' }
+                        UI.q(replyText),
+                        { parse_mode: 'HTML', entities: entities }
                     );
                     delete userState[key];
+                    
+                    const successText = `✅ Balasan berhasil dikirim ke <b>${userName}</b> (ID: ${userId})`;
+                    const successEntities = [createEmojiEntity(successText.indexOf('✅'), 2, EMOJI.CHECKMARK)];
+                    
                     await ctx.reply(
-                        `✅ Balasan berhasil dikirim ke <b>${userName}</b> (ID: ${userId})`,
-                        { parse_mode: 'HTML' }
+                        successText,
+                        { parse_mode: 'HTML', entities: successEntities }
                     );
                 } catch {
+                    const failText = `❌ Gagal mengirim pesan ke <b>${userName}</b> (ID: ${userId})`;
+                    const failEntities = [createEmojiEntity(failText.indexOf('❌'), 2, EMOJI.X)];
+                    
                     await ctx.reply(
-                        `❌ Gagal mengirim pesan ke <b>${userName}</b> (ID: ${userId})`,
-                        { parse_mode: 'HTML' }
+                        failText,
+                        { parse_mode: 'HTML', entities: failEntities }
                     );
                 }
             }
@@ -706,7 +772,11 @@ bot.on('text', async (ctx) => {
     ================================================== */
     if (state?.step === 'SET_PROMO_PRICE' && uid === CONFIG.ADMIN_ID) {
         const price = parseInt(text);
-        if (isNaN(price) || price <= 0) return ctx.reply("❌ Harga tidak valid");
+        if (isNaN(price) || price <= 0) {
+            const errText = "❌ Harga tidak valid";
+            const errEntities = [createEmojiEntity(errText.indexOf('❌'), 2, EMOJI.X)];
+            return ctx.reply(errText, { parse_mode: 'HTML', entities: errEntities });
+        }
 
         const cat = state.cat;
         await setPromo(cat, price);
@@ -715,19 +785,27 @@ bot.on('text', async (ctx) => {
 
         for (const ch of CONFIG.CHANNELS) {
             const normalPrice = await getPrice(cat);
+            const promoText = `🔥 <b>PROMO SPESIAL!</b>\n\n📂 Kategori: ${cat}\n💰 Harga Normal: Rp ${normalPrice.toLocaleString()}\n🎉 Harga Promo: Rp ${price.toLocaleString()}\n\n⚡ Buruan sebelum stok habis!`;
+            
+            const promoEntities = [
+                createEmojiEntity(promoText.indexOf('🔥'), 2, EMOJI.LIGHTNING),
+                createEmojiEntity(promoText.indexOf('📂'), 2, EMOJI.PIN),
+                createEmojiEntity(promoText.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+                createEmojiEntity(promoText.indexOf('🎉'), 2, EMOJI.STAR),
+                createEmojiEntity(promoText.indexOf('⚡'), 2, EMOJI.LIGHTNING)
+            ];
+            
             await ctx.telegram.sendMessage(
                 ch,
-`🔥 <b>PROMO SPESIAL!</b>
-
-📂 Kategori: ${cat}
-💰 Harga Normal: Rp ${normalPrice.toLocaleString()}
-🎉 Harga Promo: Rp ${price.toLocaleString()}
-
-⚡ Buruan sebelum stok habis!`,
-                { parse_mode: 'HTML' }
+                promoText,
+                { parse_mode: 'HTML', entities: promoEntities }
             );
         }
-        return ctx.reply(UI.q(`✅ Promo berhasil diset ke Rp ${price.toLocaleString()}`), { parse_mode: 'HTML' });
+        
+        const doneText = `✅ Promo berhasil diset ke Rp ${price.toLocaleString()}`;
+        const doneEntities = [createEmojiEntity(doneText.indexOf('✅'), 2, EMOJI.CHECKMARK)];
+        
+        return ctx.reply(UI.q(doneText), { parse_mode: 'HTML', entities: doneEntities });
     }
 
    if (state?.step === 'BROADCAST' && uid === CONFIG.ADMIN_ID) {
@@ -737,11 +815,12 @@ bot.on('text', async (ctx) => {
         let sukses = 0;
         let gagal = 0;
 
+        const statusText = `📢 <b>MEMULAI BROADCAST...</b>\n\n⏳ Progres: <code>[░░░░░░░░░░] 0%</code>\n✅ Berhasil: 0 | ❌ Gagal: 0`;
+        const statusEntities = [createEmojiEntity(statusText.indexOf('📢'), 2, EMOJI.BELL)];
+        
         let statusMsg = await ctx.reply(
-            UI.q(`📢 <b>MEMULAI BROADCAST...</b>\n\n` +
-                 `⏳ Progres: <code>[░░░░░░░░░░] 0%</code>\n` +
-                 `✅ Berhasil: 0 | ❌ Gagal: 0`), 
-            { parse_mode: 'HTML' }
+            UI.q(statusText), 
+            { parse_mode: 'HTML', entities: statusEntities }
         );
 
         for (let i = 0; i < totalUser; i++) {
@@ -759,36 +838,29 @@ bot.on('text', async (ctx) => {
                 const bar = "█".repeat(progress) + "░".repeat(10 - progress);
 
                 try {
+                    const updateText = `📢 <b>SEDANG BROADCAST...</b>\n\n⏳ Progres: <code>[${bar}] ${percent}%</code>\n✅ Berhasil: <b>${sukses}</b>\n❌ Gagal: <b>${gagal}</b>\n👥 Total: ${totalUser}`;
+                    const updateEntities = [createEmojiEntity(updateText.indexOf('📢'), 2, EMOJI.BELL)];
+                    
                     await ctx.telegram.editMessageText(
                         ctx.chat.id,
                         statusMsg.message_id,
                         null,
-                        UI.q(
-                            `📢 <b>SEDANG BROADCAST...</b>\n\n` +
-                            `⏳ Progres: <code>[${bar}] ${percent}%</code>\n` +
-                            `✅ Berhasil: <b>${sukses}</b>\n` +
-                            `❌ Gagal: <b>${gagal}</b>\n` +
-                            `👥 Total: ${totalUser}`
-                        ),
-                        { parse_mode: 'HTML' }
+                        UI.q(updateText),
+                        { parse_mode: 'HTML', entities: updateEntities }
                     );
                 } catch (e) {}
             }
         }
 
+        const finalText = `✅ <b>BROADCAST SELESAI!</b>\n━━━━━━━━━━━━━━━━━━━━\n📊 <b>LAPORAN HASIL:</b>\n🟢 Berhasil : <b>${sukses}</b> user\n🔴 Gagal    : <b>${gagal}</b> user\n👥 Total    : <b>${totalUser}</b> user\n\n✨ <i>Pesan telah terkirim ke semua tujuan.</i>`;
+        const finalEntities = [createEmojiEntity(finalText.indexOf('✅'), 2, EMOJI.CHECKMARK)];
+        
         return ctx.telegram.editMessageText(
             ctx.chat.id,
             statusMsg.message_id,
             null,
-            UI.q(
-                `✅ <b>BROADCAST SELESAI!</b>\n━━━━━━━━━━━━━━━━━━━━\n` +
-                `📊 <b>LAPORAN HASIL:</b>\n` +
-                `🟢 Berhasil : <b>${sukses}</b> user\n` +
-                `🔴 Gagal    : <b>${gagal}</b> user\n` +
-                `👥 Total    : <b>${totalUser}</b> user\n\n` +
-                `✨ <i>Pesan telah terkirim ke semua tujuan.</i>`
-            ),
-            { parse_mode: 'HTML' }
+            UI.q(finalText),
+            { parse_mode: 'HTML', entities: finalEntities }
         );
     }
 
@@ -801,21 +873,28 @@ bot.on('text', async (ctx) => {
         const userId = ctx.from.id;
         const ownerId = CONFIG.ADMIN_ID;
 
+        const bantuanText = `🆘 <b>Pesan Bantuan Baru</b>\n\n👤 Dari: ${userName}\n🆔 UserID: <code>${userId}</code>\n\n📩 Pesan:\n${msg}`;
+        const bantuanEntities = [
+            createEmojiEntity(bantuanText.indexOf('🆘'), 2, EMOJI.EXCLAMATION_2),
+            createEmojiEntity(bantuanText.indexOf('👤'), 2, EMOJI.STAR),
+            createEmojiEntity(bantuanText.indexOf('📩'), 2, EMOJI.PIN)
+        ];
+
         await ctx.telegram.sendMessage(ownerId,
-`🆘 <b>Pesan Bantuan Baru</b>
-
-👤 Dari: ${userName}
-🆔 UserID: <code>${userId}</code>
-
-📩 Pesan:
-${msg}`,
-        {
-            parse_mode: 'HTML',
-            ...Markup.inlineKeyboard([[Markup.button.callback('💬 Balas', `balas_${userId}`)]])
-        });
+            bantuanText,
+            {
+                parse_mode: 'HTML',
+                entities: bantuanEntities,
+                ...Markup.inlineKeyboard([[Markup.button.callback('💬 Balas', `balas_${userId}`)]])
+            }
+        );
 
         delete userState[uid];
-        return ctx.reply(UI.q('✅ Pesan bantuan telah dikirim ke owner. Mohon tunggu balasan.'), { parse_mode: 'HTML' });
+        
+        const sentText = '✅ Pesan bantuan telah dikirim ke owner. Mohon tunggu balasan.';
+        const sentEntities = [createEmojiEntity(sentText.indexOf('✅'), 2, EMOJI.CHECKMARK)];
+        
+        return ctx.reply(UI.q(sentText), { parse_mode: 'HTML', entities: sentEntities });
     }
 
     /* ==================================================
@@ -824,7 +903,9 @@ ${msg}`,
         if (state?.step === 'INPUT_DEPO') {
         const nominal = parseInt(text);
         if (isNaN(nominal) || nominal < 1000) {
-            return ctx.reply(UI.q("❌ Nominal minimal Rp 1.000"), { parse_mode: 'HTML' });
+            const minText = "❌ Nominal minimal Rp 1.000";
+            const minEntities = [createEmojiEntity(minText.indexOf('❌'), 2, EMOJI.X)];
+            return ctx.reply(UI.q(minText), { parse_mode: 'HTML', entities: minEntities });
         }
 
         await UI.loading(ctx, "🔄 <b>𝗚𝗘𝗡𝗘𝗥𝗔𝗧𝗜𝗡𝗚 𝗤𝗥𝗜𝗦...</b>");
@@ -843,24 +924,29 @@ ${msg}`,
 
             if (!res.status) {
                 delete userState[uid];
-                return ctx.reply(UI.q("❌ Gagal membuat QRIS: " + (res.message || "Server Error")), { parse_mode: 'HTML' });
+                const failText = "❌ Gagal membuat QRIS: " + (res.message || "Server Error");
+                const failEntities = [createEmojiEntity(failText.indexOf('❌'), 2, EMOJI.X)];
+                return ctx.reply(UI.q(failText), { parse_mode: 'HTML', entities: failEntities });
             }
 
             const qrBuffer = await QRCode.toBuffer(res.data.qr_string);
+            
+            const captionText = `🛒 <b>𝗣𝗘𝗠𝗕𝗔𝗬𝗔𝗥𝗔𝗡 𝗤𝗥𝗜𝗦</b>\n\n🆔 <b>ID Deposit:</b> <code>${res.data.id}</code>\n💰 <b>Nominal:</b> <code>Rp ${res.data.nominal.toLocaleString()}</code>\n📥 <b>Saldo Diterima:</b> <code>Rp ${(res.data.get_balance || res.data.nominal).toLocaleString()}</code>\n⏳ <b>Status:</b> <i>PENDING</i>\n\n📌 <i>Scan QRIS untuk melanjutkan. Saldo masuk otomatis setelah klik CEK STATUS.</i>`;
+            
+            const captionEntities = [
+                createEmojiEntity(captionText.indexOf('🛒'), 2, EMOJI.ROCKET),
+                createEmojiEntity(captionText.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+                createEmojiEntity(captionText.indexOf('📥'), 2, EMOJI.PIN),
+                createEmojiEntity(captionText.indexOf('⏳'), 2, EMOJI.BELL),
+                createEmojiEntity(captionText.indexOf('📌'), 2, EMOJI.PIN)
+            ];
+
             const sentMsg = await ctx.replyWithPhoto(
                 { source: qrBuffer },
                 {
-                    caption: UI.q(
-`🛒 <b>𝗣𝗘𝗠𝗕𝗔𝗬𝗔𝗥𝗔𝗡 𝗤𝗥𝗜𝗦</b>
-
-🆔 <b>ID Deposit:</b> <code>${res.data.id}</code>
-💰 <b>Nominal:</b> <code>Rp ${res.data.nominal.toLocaleString()}</code>
-📥 <b>Saldo Diterima:</b> <code>Rp ${(res.data.get_balance || res.data.nominal).toLocaleString()}</code>
-⏳ <b>Status:</b> <i>PENDING</i>
-
-📌 <i>Scan QRIS untuk melanjutkan. Saldo masuk otomatis setelah klik CEK STATUS.</i>`
-                    ),
+                    caption: UI.q(captionText),
                     parse_mode: 'HTML',
+                    caption_entities: captionEntities,
                     ...Markup.inlineKeyboard([
                         [Markup.button.callback('🔄 CEK STATUS', `check_depo_${res.data.id}`)],
                         [Markup.button.callback('❌ BATAL', `cancel_depo_${res.data.id}`)]
@@ -910,7 +996,9 @@ ${msg}`,
         if (state?.step === 'ADMIN_NAME') {
             state.name = text.trim();
             state.step = 'ADMIN_PHONE';
-            return ctx.reply(UI.q("📱 Kirim <b>Nomor HP</b> (untuk OTP) atau <b>String Session</b>:"), { parse_mode: 'HTML' });
+            const phoneText = "📱 Kirim <b>Nomor HP</b> (untuk OTP) atau <b>String Session</b>:";
+            const phoneEntities = [createEmojiEntity(phoneText.indexOf('📱'), 2, EMOJI.PIN)];
+            return ctx.reply(UI.q(phoneText), { parse_mode: 'HTML', entities: phoneEntities });
         }
 
         if (state?.step === 'ADMIN_PHONE') {
@@ -932,26 +1020,46 @@ ${msg}`,
                     state.step = 'ADMIN_PRICE_FINAL';
                     await client.disconnect();
 
-                    return ctx.reply(UI.q(
-                        `✨ <b>ACCOUNT DETECTED (SESSION)</b>\n━━━━━━━━━━━━━━━━━━━━━━\n👤 <b>Name:</b> <code>${state.tempAccount.name}</code>\n📱 <b>Phone:</b> <code>${state.tempAccount.phone}</code>\n🆔 <b>TG-ID:</b> <code>${state.tempAccount.tgId}</code>\n\n💰 <b>Masukkan Harga Jual:</b>`
-                    ), { parse_mode: 'HTML' });
+                    const detectedText = `✨ <b>ACCOUNT DETECTED (SESSION)</b>\n━━━━━━━━━━━━━━━━━━━━━━\n👤 <b>Name:</b> <code>${state.tempAccount.name}</code>\n📱 <b>Phone:</b> <code>${state.tempAccount.phone}</code>\n🆔 <b>TG-ID:</b> <code>${state.tempAccount.tgId}</code>\n\n💰 <b>Masukkan Harga Jual:</b>`;
+                    const detectedEntities = [
+                        createEmojiEntity(detectedText.indexOf('✨'), 2, EMOJI.STAR),
+                        createEmojiEntity(detectedText.indexOf('👤'), 2, EMOJI.STAR),
+                        createEmojiEntity(detectedText.indexOf('📱'), 2, EMOJI.PIN),
+                        createEmojiEntity(detectedText.indexOf('💰'), 2, EMOJI.MONEY_BAG)
+                    ];
+                    
+                    return ctx.reply(UI.q(detectedText), { parse_mode: 'HTML', entities: detectedEntities });
                 } catch (err) {
                     delete userState[uid];
-                    return ctx.reply(UI.q("❌ String Session tidak valid."));
+                    const invalidText = "❌ String Session tidak valid.";
+                    const invalidEntities = [createEmojiEntity(invalidText.indexOf('❌'), 2, EMOJI.X)];
+                    return ctx.reply(UI.q(invalidText), { parse_mode: 'HTML', entities: invalidEntities });
                 }
             }
 
             // CEK NOMOR HP
             const phone = input.replace(/[^0-9]/g, '');
-            if (phone.length < 8) return ctx.reply(UI.q("❌ Kirim Nomor HP / String Session valid."));
+            if (phone.length < 8) {
+                const invalidPhoneText = "❌ Kirim Nomor HP / String Session valid.";
+                const invalidPhoneEntities = [createEmojiEntity(invalidPhoneText.indexOf('❌'), 2, EMOJI.X)];
+                return ctx.reply(UI.q(invalidPhoneText), { parse_mode: 'HTML', entities: invalidPhoneEntities });
+            }
             state.phone = phone;
             state.step = 'ADMIN_PRICE';
-            return ctx.reply(UI.q(`💰 Nomor diterima: <code>${phone}</code>\n\nMasukkan <b>Harga Jual</b>:`), { parse_mode: 'HTML' });
+            
+            const priceText = `💰 Nomor diterima: <code>${phone}</code>\n\nMasukkan <b>Harga Jual</b>:`;
+            const priceEntities = [createEmojiEntity(priceText.indexOf('💰'), 2, EMOJI.MONEY_BAG)];
+            
+            return ctx.reply(UI.q(priceText), { parse_mode: 'HTML', entities: priceEntities });
         }
 
         if (state?.step === 'ADMIN_PRICE') {
             const price = parseInt(text);
-            if (isNaN(price) || price < 1000) return ctx.reply(UI.q("❌ Harga minimal 1000"));
+            if (isNaN(price) || price < 1000) {
+                const minPriceText = "❌ Harga minimal 1000";
+                const minPriceEntities = [createEmojiEntity(minPriceText.indexOf('❌'), 2, EMOJI.X)];
+                return ctx.reply(UI.q(minPriceText), { parse_mode: 'HTML', entities: minPriceEntities });
+            }
             state.price = price;
             state.step = 'ADMIN_OTP';
             await UI.loading(ctx, "📩 <b>Mengirim OTP...</b>");
@@ -961,10 +1069,16 @@ ${msg}`,
                 const { phoneCodeHash } = await client.sendCode({ apiId: CONFIG.API_ID, apiHash: CONFIG.API_HASH }, state.phone);
                 state.client = client;
                 state.phoneCodeHash = phoneCodeHash;
-                return ctx.reply(UI.q("📩 <b>OTP DIKIRIM!</b>\nMasukkan kode OTP:"), { parse_mode: 'HTML' });
+                
+                const otpText = "📩 <b>OTP DIKIRIM!</b>\nMasukkan kode OTP:";
+                const otpEntities = [createEmojiEntity(otpText.indexOf('📩'), 2, EMOJI.PIN)];
+                
+                return ctx.reply(UI.q(otpText), { parse_mode: 'HTML', entities: otpEntities });
             } catch {
                 delete userState[uid];
-                return ctx.reply(UI.q("❌ Gagal kirim OTP."));
+                const failOtpText = "❌ Gagal kirim OTP.";
+                const failOtpEntities = [createEmojiEntity(failOtpText.indexOf('❌'), 2, EMOJI.X)];
+                return ctx.reply(UI.q(failOtpText), { parse_mode: 'HTML', entities: failOtpEntities });
             }
         }
 
@@ -987,16 +1101,26 @@ ${msg}`,
                 await setPrice(state.cat, state.price);
                 delete userState[uid];
                 await sendSuccessNotif(ctx, state.cat, state.price);
-                return ctx.reply(UI.q("✅ <b>BERHASIL:</b> Akun ditambahkan via OTP!"));
+                
+                const successText = "✅ <b>BERHASIL:</b> Akun ditambahkan via OTP!";
+                const successEntities = [createEmojiEntity(successText.indexOf('✅'), 2, EMOJI.CHECKMARK)];
+                
+                return ctx.reply(UI.q(successText), { parse_mode: 'HTML', entities: successEntities });
             } catch {
                 delete userState[uid];
-                return ctx.reply(UI.q("❌ OTP salah atau limit."));
+                const wrongOtpText = "❌ OTP salah atau limit.";
+                const wrongOtpEntities = [createEmojiEntity(wrongOtpText.indexOf('❌'), 2, EMOJI.X)];
+                return ctx.reply(UI.q(wrongOtpText), { parse_mode: 'HTML', entities: wrongOtpEntities });
             }
         }
 
         if (state?.step === 'ADMIN_PRICE_FINAL') {
             const price = parseInt(text);
-            if (isNaN(price) || price < 1000) return ctx.reply(UI.q("❌ Harga minimal 1000"));
+            if (isNaN(price) || price < 1000) {
+                const minFinalText = "❌ Harga minimal 1000";
+                const minFinalEntities = [createEmojiEntity(minFinalText.indexOf('❌'), 2, EMOJI.X)];
+                return ctx.reply(UI.q(minFinalText), { parse_mode: 'HTML', entities: minFinalEntities });
+            }
             const acc = state.tempAccount;
             
             // Simpan ke MongoDB
@@ -1011,7 +1135,11 @@ ${msg}`,
             await setPrice(state.cat, price);
             delete userState[uid];
             await sendSuccessNotif(ctx, state.cat, price);
-            return ctx.reply(UI.q("✅ <b>BERHASIL:</b> Akun ditambahkan via Session!"));
+            
+            const finalSuccessText = "✅ <b>BERHASIL:</b> Akun ditambahkan via Session!";
+            const finalSuccessEntities = [createEmojiEntity(finalSuccessText.indexOf('✅'), 2, EMOJI.CHECKMARK)];
+            
+            return ctx.reply(UI.q(finalSuccessText), { parse_mode: 'HTML', entities: finalSuccessEntities });
         }
 
         /* =========================
@@ -1028,24 +1156,48 @@ ${msg}`,
                 user = await User.findOne({ username: username });
             }
             
-            if (!user) return ctx.reply(UI.q("❌ User tidak ditemukan"));
+            if (!user) {
+                const notFoundText = "❌ User tidak ditemukan";
+                const notFoundEntities = [createEmojiEntity(notFoundText.indexOf('❌'), 2, EMOJI.X)];
+                return ctx.reply(UI.q(notFoundText), { parse_mode: 'HTML', entities: notFoundEntities });
+            }
             state.targetUser = user;
             state.step = state.step === 'ADD_SALDO_TARGET' ? 'ADD_SALDO_AMOUNT' : 'MINUS_SALDO_AMOUNT';
-            return ctx.reply(UI.q(`💰 Masukkan <b>jumlah saldo</b>:`), { parse_mode: 'HTML' });
+            
+            const amountText = `💰 Masukkan <b>jumlah saldo</b>:`;
+            const amountEntities = [createEmojiEntity(amountText.indexOf('💰'), 2, EMOJI.MONEY_BAG)];
+            
+            return ctx.reply(UI.q(amountText), { parse_mode: 'HTML', entities: amountEntities });
         }
 
         if (state?.step === 'ADD_SALDO_AMOUNT' || state?.step === 'MINUS_SALDO_AMOUNT') {
             const amount = parseInt(text);
-            if (isNaN(amount) || amount <= 0) return ctx.reply(UI.q("❌ Jumlah tidak valid"));
+            if (isNaN(amount) || amount <= 0) {
+                const invalidAmountText = "❌ Jumlah tidak valid";
+                const invalidAmountEntities = [createEmojiEntity(invalidAmountText.indexOf('❌'), 2, EMOJI.X)];
+                return ctx.reply(UI.q(invalidAmountText), { parse_mode: 'HTML', entities: invalidAmountEntities });
+            }
             const user = state.targetUser;
-            if (state.step === 'MINUS_SALDO_AMOUNT' && user.balance < amount) return ctx.reply(UI.q("❌ Saldo tidak mencukupi"));
+            if (state.step === 'MINUS_SALDO_AMOUNT' && user.balance < amount) {
+                const insufficientText = "❌ Saldo tidak mencukupi";
+                const insufficientEntities = [createEmojiEntity(insufficientText.indexOf('❌'), 2, EMOJI.X)];
+                return ctx.reply(UI.q(insufficientText), { parse_mode: 'HTML', entities: insufficientEntities });
+            }
             
             const change = state.step === 'ADD_SALDO_AMOUNT' ? amount : -amount;
             await updateUserBalance(user.userId, change);
             
             delete userState[uid];
             const updatedUser = await getUser(user.userId);
-            return ctx.reply(UI.q(`✅ <b>UPDATE BERHASIL</b>\n👤 User: ${updatedUser.name}\n💳 Saldo: <code>Rp ${updatedUser.balance.toLocaleString()}</code>`), { parse_mode: 'HTML' });
+            
+            const updateText = `✅ <b>UPDATE BERHASIL</b>\n👤 User: ${updatedUser.name}\n💳 Saldo: <code>Rp ${updatedUser.balance.toLocaleString()}</code>`;
+            const updateEntities = [
+                createEmojiEntity(updateText.indexOf('✅'), 2, EMOJI.CHECKMARK),
+                createEmojiEntity(updateText.indexOf('👤'), 2, EMOJI.STAR),
+                createEmojiEntity(updateText.indexOf('💳'), 2, EMOJI.WALLET)
+            ];
+            
+            return ctx.reply(UI.q(updateText), { parse_mode: 'HTML', entities: updateEntities });
         }
     }
 });
@@ -1108,31 +1260,34 @@ bot.action(/^check_depo_(.+)$/, async (ctx) => {
             try { await ctx.deleteMessage(); } catch (e) {}
 
             // Notifikasi Channel
-            const channelMsg = `<blockquote>
-<b>💳 DEPOSIT BERHASIL (AUTO)</b>
-━━━━━━━━━━━━━━━━━━━━
-👤 <b>Pembeli:</b> ${user.name}
-💰 <b>Nominal:</b> Rp ${nominalMasuk.toLocaleString()}
-💳 <b>Metode:</b> ${res.data.metode || 'QRIS'}
-⏰ <b>Waktu:</b> ${new Date().toLocaleString('id-ID')}
-━━━━━━━━━━━━━━━━━━━━
-⚡ <i>Status: Berhasil Diverifikasi Sistem</i>
-</blockquote>`;
+            const channelText = `<blockquote>\n<b>💳 DEPOSIT BERHASIL (AUTO)</b>\n━━━━━━━━━━━━━━━━━━━━\n👤 <b>Pembeli:</b> ${user.name}\n💰 <b>Nominal:</b> Rp ${nominalMasuk.toLocaleString()}\n💳 <b>Metode:</b> ${res.data.metode || 'QRIS'}\n⏰ <b>Waktu:</b> ${new Date().toLocaleString('id-ID')}\n━━━━━━━━━━━━━━━━━━━━\n⚡ <i>Status: Berhasil Diverifikasi Sistem</i>\n</blockquote>`;
+            
+            const channelEntities = [
+                createEmojiEntity(channelText.indexOf('💳'), 2, EMOJI.MONEY_BAG),
+                createEmojiEntity(channelText.indexOf('👤'), 2, EMOJI.STAR),
+                createEmojiEntity(channelText.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+                createEmojiEntity(channelText.indexOf('💳'), 2, EMOJI.WALLET),
+                createEmojiEntity(channelText.indexOf('⏰'), 2, EMOJI.BELL),
+                createEmojiEntity(channelText.indexOf('⚡'), 2, EMOJI.LIGHTNING)
+            ];
 
             for (const ch of CONFIG.CHANNELS) {
-                try { await ctx.telegram.sendMessage(ch, channelMsg, { parse_mode: 'HTML' }); } catch (e) {}
+                try { 
+                    await ctx.telegram.sendMessage(ch, channelText, { 
+                        parse_mode: 'HTML',
+                        entities: channelEntities
+                    }); 
+                } catch (e) {}
             }
 
             // Notifikasi User
-            return ctx.reply(UI.q(
-`✅ <b>PEMBAYARAN TERVERIFIKASI!</b>
-
-Saldo sebesar <b>Rp ${nominalMasuk.toLocaleString()}</b> telah ditambahkan ke akun Anda.
-
-💰 <b>Total Saldo:</b> <code>Rp ${user.balance.toLocaleString()}</code>
-
-<i>Terima kasih telah melakukan top up!</i>`
-            ), { parse_mode: 'HTML' });
+            const userText = `✅ <b>PEMBAYARAN TERVERIFIKASI!</b>\n\nSaldo sebesar <b>Rp ${nominalMasuk.toLocaleString()}</b> telah ditambahkan ke akun Anda.\n\n💰 <b>Total Saldo:</b> <code>Rp ${user.balance.toLocaleString()}</code>\n\n<i>Terima kasih telah melakukan top up!</i>`;
+            const userEntities = [
+                createEmojiEntity(userText.indexOf('✅'), 2, EMOJI.CHECKMARK),
+                createEmojiEntity(userText.indexOf('💰'), 2, EMOJI.MONEY_BAG)
+            ];
+            
+            return ctx.reply(UI.q(userText), { parse_mode: 'HTML', entities: userEntities });
         }
 
         // 5. JIKA MASIH PENDING
@@ -1170,7 +1325,10 @@ bot.action(/^cancel_depo_(.+)$/, async (ctx) => {
 
         try { await ctx.deleteMessage(); } catch (e) {}
 
-        return ctx.reply(UI.q(`❌ <b>DEPOSIT DIBATALKAN</b>\n\nTransaksi #${depoId} telah dibatalkan.`), { parse_mode: 'HTML' });
+        const cancelText = `❌ <b>DEPOSIT DIBATALKAN</b>\n\nTransaksi #${depoId} telah dibatalkan.`;
+        const cancelEntities = [createEmojiEntity(cancelText.indexOf('❌'), 2, EMOJI.X)];
+        
+        return ctx.reply(UI.q(cancelText), { parse_mode: 'HTML', entities: cancelEntities });
     } catch (e) {
         return ctx.answerCbQuery("❌ Gagal membatalkan transaksi.", { show_alert: true });
     }
@@ -1199,7 +1357,15 @@ bot.action('cek_stok', async (ctx) => {
         text += '❌ Tidak ada stok tersedia';
     }
 
-    await ctx.reply(UI.q(text), { parse_mode: 'HTML' });
+    const entities = [
+        createEmojiEntity(text.indexOf('📦'), 2, EMOJI.PIN),
+        createEmojiEntity(text.indexOf('📂'), 2, EMOJI.PIN)
+    ];
+    if (text.includes('❌')) {
+        entities.push(createEmojiEntity(text.indexOf('❌'), 2, EMOJI.X));
+    }
+
+    await ctx.reply(UI.q(text), { parse_mode: 'HTML', entities: entities });
 });
 
 // ==============================
@@ -1211,7 +1377,10 @@ bot.action('butuh_bantuan', async (ctx) => {
 
     try { await ctx.deleteMessage(); } catch(e){}
 
-    await ctx.reply(UI.q('🆘 Silakan tulis pesan bantuan Anda. Pesan ini akan dikirim ke owner.'), { parse_mode: 'HTML' });
+    const bantuanText = '🆘 Silakan tulis pesan bantuan Anda. Pesan ini akan dikirim ke owner.';
+    const bantuanEntities = [createEmojiEntity(bantuanText.indexOf('🆘'), 2, EMOJI.EXCLAMATION_2)];
+    
+    await ctx.reply(UI.q(bantuanText), { parse_mode: 'HTML', entities: bantuanEntities });
 });
 
 // ==============================
@@ -1227,7 +1396,11 @@ bot.action(/^balas_(\d+)$/, async (ctx) => {
 bot.action('menu_profile', async (ctx) => {
     const uid = ctx.from.id;
     const user = await getUser(uid);
-    if (!user) return ctx.reply("❌ Data user tidak ditemukan");
+    if (!user) {
+        const notFoundText = "❌ Data user tidak ditemukan";
+        const notFoundEntities = [createEmojiEntity(notFoundText.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.reply(notFoundText, { parse_mode: 'HTML', entities: notFoundEntities });
+    }
 
     try { await ctx.deleteMessage(); } catch (e) {}
 
@@ -1241,22 +1414,21 @@ bot.action('menu_profile', async (ctx) => {
     const depositSukses = deposits.filter(d => d.status.toLowerCase() === 'sukses').length;
     const depositPending = deposits.filter(d => d.status.toLowerCase() === 'pending').length;
 
-    const caption = UI.q(
-`👤 <b>Nama:</b> ${user.name}
-🆔 <b>User ID:</b> ${uid}
-📛 <b>Username:</b> ${user.username || '-'}
-💰 <b>Saldo:</b> Rp ${user.balance.toLocaleString()}
-
-📦 <b>Riwayat Order:</b>
-Total: ${totalOrder} | Selesai: ${orderSukses} | Gagal: ${orderGagal}
-
-💳 <b>Riwayat Deposit:</b>
-Total: ${totalDeposit} | Sukses: ${depositSukses} | Pending: ${depositPending}`
-    );
+    const captionText = `👤 <b>Nama:</b> ${user.name}\n🆔 <b>User ID:</b> ${uid}\n📛 <b>Username:</b> ${user.username || '-'}\n💰 <b>Saldo:</b> Rp ${user.balance.toLocaleString()}\n\n📦 <b>Riwayat Order:</b>\nTotal: ${totalOrder} | Selesai: ${orderSukses} | Gagal: ${orderGagal}\n\n💳 <b>Riwayat Deposit:</b>\nTotal: ${totalDeposit} | Sukses: ${depositSukses} | Pending: ${depositPending}`;
+    
+    const captionEntities = [
+        createEmojiEntity(captionText.indexOf('👤'), 2, EMOJI.STAR),
+        createEmojiEntity(captionText.indexOf('🆔'), 2, EMOJI.PIN),
+        createEmojiEntity(captionText.indexOf('📛'), 2, EMOJI.PIN),
+        createEmojiEntity(captionText.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+        createEmojiEntity(captionText.indexOf('📦'), 2, EMOJI.PIN),
+        createEmojiEntity(captionText.indexOf('💳'), 2, EMOJI.WALLET)
+    ];
 
     await ctx.replyWithPhoto(CONFIG.MAIN_IMG, {
-        caption,
+        caption: UI.q(captionText),
         parse_mode: 'HTML',
+        caption_entities: captionEntities,
         ...Markup.inlineKeyboard([
             [Markup.button.callback('📦 Riwayat Order', `profile_order`)],
             [Markup.button.callback('💳 Riwayat Deposit', `profile_deposit`)],
@@ -1272,16 +1444,23 @@ bot.action('profile_order', async (ctx) => {
 
     try { await ctx.deleteMessage(); } catch(e){}
 
-    if (orders.length === 0) return ctx.reply(UI.q('❌ Belum ada riwayat order'), { parse_mode: 'HTML' });
+    if (orders.length === 0) {
+        const emptyText = '❌ Belum ada riwayat order';
+        const emptyEntities = [createEmojiEntity(emptyText.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.reply(UI.q(emptyText), { parse_mode: 'HTML', entities: emptyEntities });
+    }
 
     const buttons = orders.map(o => 
         [Markup.button.callback(`ID: ${o.id} | Rp ${o.price.toLocaleString()}`, `order_detail_${o.id}`)]
     );
     buttons.push([Markup.button.callback('🔙 Kembali', 'menu_profile')]);
 
+    const riwayatText = '<b>📦 RIWAYAT ORDER ANDA</b>\nKlik untuk melihat detail setiap order';
+    const riwayatEntities = [createEmojiEntity(riwayatText.indexOf('📦'), 2, EMOJI.PIN)];
+
     await ctx.reply(
-        UI.q('<b>📦 RIWAYAT ORDER ANDA</b>\nKlik untuk melihat detail setiap order'),
-        { parse_mode: 'HTML', ...Markup.inlineKeyboard(buttons) }
+        UI.q(riwayatText),
+        { parse_mode: 'HTML', entities: riwayatEntities, ...Markup.inlineKeyboard(buttons) }
     );
 });
 
@@ -1292,16 +1471,23 @@ bot.action('profile_deposit', async (ctx) => {
 
     try { await ctx.deleteMessage(); } catch(e){}
 
-    if (deposits.length === 0) return ctx.reply(UI.q('❌ Belum ada riwayat deposit'), { parse_mode: 'HTML' });
+    if (deposits.length === 0) {
+        const emptyDepoText = '❌ Belum ada riwayat deposit';
+        const emptyDepoEntities = [createEmojiEntity(emptyDepoText.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.reply(UI.q(emptyDepoText), { parse_mode: 'HTML', entities: emptyDepoEntities });
+    }
 
     const buttons = deposits.map(d => 
         [Markup.button.callback(`ID: ${d.id} | Rp ${d.nominal.toLocaleString()}`, `deposit_detail_${d.id}`)]
     );
     buttons.push([Markup.button.callback('🔙 Kembali', 'menu_profile')]);
 
+    const depoRiwayatText = '<b>💰 RIWAYAT DEPOSIT ANDA</b>\nKlik untuk melihat detail tiap deposit';
+    const depoRiwayatEntities = [createEmojiEntity(depoRiwayatText.indexOf('💰'), 2, EMOJI.MONEY_BAG)];
+
     await ctx.reply(
-        UI.q('<b>💰 RIWAYAT DEPOSIT ANDA</b>\nKlik untuk melihat detail tiap deposit'),
-        { parse_mode: 'HTML', ...Markup.inlineKeyboard(buttons) }
+        UI.q(depoRiwayatText),
+        { parse_mode: 'HTML', entities: depoRiwayatEntities, ...Markup.inlineKeyboard(buttons) }
     );
 });
 
@@ -1311,31 +1497,45 @@ bot.action(/^deposit_detail_(.+)$/, async (ctx) => {
     const user = await getUser(uid);
     const depo = (user?.deposits || []).find(d => d.id === depoId);
 
-    if (!depo) return ctx.answerCbQuery("❌ Deposit tidak ditemukan", { show_alert: true });
+    if (!depo) {
+        const notFoundDepoText = "❌ Deposit tidak ditemukan";
+        const notFoundDepoEntities = [createEmojiEntity(notFoundDepoText.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.answerCbQuery(notFoundDepoText, { show_alert: true, entities: notFoundDepoEntities });
+    }
 
     try { await ctx.deleteMessage(); } catch(e){}
 
-    const msg = await ctx.reply(UI.q("⏳ <b>Mengambil detail pembayaran...</b>\n█▒▒▒▒▒▒ 10%"));
-    const frames = ["█▒▒▒▒▒▒ 10%", "███▒▒▒▒▒ 30%", "█████▒▒▒ 50%", "███████▒▒ 80%", "█████████ 100%"];
+    const loadingText = "⏳ <b>Mengambil detail pembayaran...</b>\n█▒▒▒▒▒▒ 10%";
+    const loadingEntities = [createEmojiEntity(loadingText.indexOf('⏳'), 2, EMOJI.BELL)];
+    
+    const msg = await ctx.reply(UI.q(loadingText), { parse_mode: 'HTML', entities: loadingEntities });
+    const frames = ["█▒▒▒▒▒▒ 10%", "███▒▒▒▒▒ 30%", "█████▒▒▒ 50%", "███████▒▒ 80%",                     "█████████ 100%"];
     for (let f of frames) {
         await new Promise(r => setTimeout(r, 300));
+        const frameText = `<b>Detail Deposit</b>\n⏳ Loading...\n${f}`;
+        const frameEntities = [createEmojiEntity(frameText.indexOf('⏳'), 2, EMOJI.BELL)];
+        
         await ctx.telegram.editMessageText(ctx.chat.id, msg.message_id, null,
-            UI.q(`<b>Detail Deposit</b>\n⏳ Loading...\n${f}`), { parse_mode: 'HTML' }
+            UI.q(frameText), { parse_mode: 'HTML', entities: frameEntities }
         );
     }
 
-    await ctx.telegram.editMessageText(ctx.chat.id, msg.message_id, null,
-        UI.q(
-`💳 <b>DETAIL DEPOSIT</b>
+    const detailText = `💳 <b>DETAIL DEPOSIT</b>\n\n🆔 ID Deposit: <code>${depo.id}</code>\n💰 Nominal: Rp ${depo.nominal?.toLocaleString() || 0}\n💳 Metode: ${depo.method || 'QRIS / E-wallet'}\n📦 Status: <b>${depo.status.toUpperCase()}</b>\n⏰ Tanggal: ${new Date(depo.timestamp || Date.now()).toLocaleString()}`;
+    
+    const detailEntities = [
+        createEmojiEntity(detailText.indexOf('💳'), 2, EMOJI.MONEY_BAG),
+        createEmojiEntity(detailText.indexOf('🆔'), 2, EMOJI.PIN),
+        createEmojiEntity(detailText.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+        createEmojiEntity(detailText.indexOf('💳'), 2, EMOJI.WALLET),
+        createEmojiEntity(detailText.indexOf('📦'), 2, EMOJI.PIN),
+        createEmojiEntity(detailText.indexOf('⏰'), 2, EMOJI.BELL)
+    ];
 
-🆔 ID Deposit: <code>${depo.id}</code>
-💰 Nominal: Rp ${depo.nominal?.toLocaleString() || 0}
-💳 Metode: ${depo.method || 'QRIS / E-wallet'}
-📦 Status: <b>${depo.status.toUpperCase()}</b>
-⏰ Tanggal: ${new Date(depo.timestamp || Date.now()).toLocaleString()}`
-        ),
+    await ctx.telegram.editMessageText(ctx.chat.id, msg.message_id, null,
+        UI.q(detailText),
         {
             parse_mode: 'HTML',
+            entities: detailEntities,
             ...Markup.inlineKeyboard([
                 [Markup.button.callback('🔙 Kembali', 'profile_deposit')]
             ])
@@ -1349,33 +1549,47 @@ bot.action(/^order_detail_(.+)$/, async (ctx) => {
     const user = await getUser(uid);
     const order = (user?.orders || []).find(o => o.id === orderId);
 
-    if (!order) return ctx.answerCbQuery('❌ Order tidak ditemukan', { show_alert: true });
+    if (!order) {
+        const notFoundOrderText = '❌ Order tidak ditemukan';
+        const notFoundOrderEntities = [createEmojiEntity(notFoundOrderText.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.answerCbQuery(notFoundOrderText, { show_alert: true, entities: notFoundOrderEntities });
+    }
 
     try { await ctx.deleteMessage(); } catch(e){}
 
-    const msg = await ctx.reply(UI.q('⏳ <b>Mengambil detail order...</b>\n█▒▒▒▒▒ 10%'));
+    const orderLoadingText = '⏳ <b>Mengambil detail order...</b>\n█▒▒▒▒▒ 10%';
+    const orderLoadingEntities = [createEmojiEntity(orderLoadingText.indexOf('⏳'), 2, EMOJI.BELL)];
+    
+    const msg = await ctx.reply(UI.q(orderLoadingText), { parse_mode: 'HTML', entities: orderLoadingEntities });
     const frames = ["█▒▒▒▒▒ 10%", "███▒▒▒▒ 30%", "█████▒▒ 50%", "███████ 80%", "█████████ 100%"];
-    for (let f of frames) {
+    for (let f of frames for (let f of frames) {
         await new Promise(r => setTimeout(r, 300));
+        const orderFrameText = `<b>Detail Order</b>\n⏳ Loading...\n${f}`;
+        const orderFrameEntities = [createEmojiEntity(orderFrameText.indexOf('⏳'), 2, EMOJI.BELL)];
+        
         await ctx.telegram.editMessageText(ctx.chat.id, msg.message_id, null,
-            UI.q(`<b>Detail Order</b>\n⏳ Loading...\n${f}`), { parse_mode: 'HTML' }
+            UI.q(orderFrameText), { parse_mode: 'HTML', entities: orderFrameEntities }
         );
     }
 
-    await ctx.telegram.editMessageText(ctx.chat.id, msg.message_id, null,
-        UI.q(
-`📦 <b>DETAIL ORDER</b>
+    const orderDetailText = `📦 <b>DETAIL ORDER</b>\n\n🆔 Order ID: ${order.id}\n📂 Kategori: ${order.category || '-'}\n👤 Nama Akun: ${order.accountName || '-'}\n📱 Nomor: <code>${order.phone || '-'}</code>\n💰 Harga: Rp ${order.price.toLocaleString()}\n📦 Status: <b>${order.status.toUpperCase()}</b>\n⏰ Tanggal: ${new Date(order.timestamp).toLocaleString()}`;
+    
+    const orderDetailEntities = [
+        createEmojiEntity(orderDetailText.indexOf('📦'), 2, EMOJI.PIN),
+        createEmojiEntity(orderDetailText.indexOf('🆔'), 2, EMOJI.PIN),
+        createEmojiEntity(orderDetailText.indexOf('📂'), 2, EMOJI.PIN),
+        createEmojiEntity(orderDetailText.indexOf('👤'), 2, EMOJI.STAR),
+        createEmojiEntity(orderDetailText.indexOf('📱'), 2, EMOJI.PIN),
+        createEmojiEntity(orderDetailText.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+        createEmojiEntity(orderDetailText.indexOf('📦'), 2, EMOJI.PIN),
+        createEmojiEntity(orderDetailText.indexOf('⏰'), 2, EMOJI.BELL)
+    ];
 
-🆔 Order ID: ${order.id}
-📂 Kategori: ${order.category || '-'}
-👤 Nama Akun: ${order.accountName || '-'}
-📱 Nomor: <code>${order.phone || '-'}</code>
-💰 Harga: Rp ${order.price.toLocaleString()}
-📦 Status: <b>${order.status.toUpperCase()}</b>
-⏰ Tanggal: ${new Date(order.timestamp).toLocaleString()}`
-        ),
+    await ctx.telegram.editMessageText(ctx.chat.id, msg.message_id, null,
+        UI.q(orderDetailText),
         {
             parse_mode: 'HTML',
+            entities: orderDetailEntities,
             ...Markup.inlineKeyboard([
                 [Markup.button.callback('🔙 Kembali', 'profile_order')]
             ])
@@ -1388,7 +1602,9 @@ bot.action(/^order_detail_(.+)$/, async (ctx) => {
 // ==========================================
 bot.action('owner_menu', async (ctx) => {
     if (ctx.from.id !== CONFIG.ADMIN_ID) {
-        return ctx.answerCbQuery('❌ Akses ditolak', { show_alert: true });
+        const deniedText = '❌ Akses ditolak';
+        const deniedEntities = [createEmojiEntity(deniedText.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.answerCbQuery(deniedText, { show_alert: true, entities: deniedEntities });
     }
 
     const totalUsers = (await getAllUsers()).length;
@@ -1402,22 +1618,25 @@ bot.action('owner_menu', async (ctx) => {
     const hours = Math.floor(uptimeMs / (1000 * 60 * 60));
     const minutes = Math.floor((uptimeMs / (1000 * 60)) % 60);
 
+    const panelText = `👑 <b>OWNER CONTROL PANEL</b>\n\n📊 <b>STATISTIK BOT</b>\n━━━━━━━━━━━━━━━━\n👥 Total User     : ${totalUsers}\n🟢 User Aktif     : ${activeUsers}\n📦 Total Stok     : ${totalStock}\n💰 Total Saldo    : Rp ${totalBalance.toLocaleString()}\n🔥 Promo Aktif    : ${totalPromo}\n⏳ Uptime         : ${hours} Jam ${minutes} Menit\n\nSilahkan pilih aksi admin:`;
+    
+    const panelEntities = [
+        createEmojiEntity(panelText.indexOf('👑'), 2, EMOJI.DIAMOND),
+        createEmojiEntity(panelText.indexOf('📊'), 2, EMOJI.PIN),
+        createEmojiEntity(panelText.indexOf('👥'), 2, EMOJI.STAR),
+        createEmojiEntity(panelText.indexOf('🟢'), 2, EMOJI.CHECKMARK),
+        createEmojiEntity(panelText.indexOf('📦'), 2, EMOJI.PIN),
+        createEmojiEntity(panelText.indexOf('💰'), 2, EMOJI.MONEY_BAG),
+        createEmojiEntity(panelText.indexOf('🔥'), 2, EMOJI.LIGHTNING),
+        createEmojiEntity(panelText.indexOf('⏳'), 2, EMOJI.BELL)
+    ];
+
     try {
         await ctx.editMessageCaption(
-            UI.q(`👑 <b>OWNER CONTROL PANEL</b>
-
-📊 <b>STATISTIK BOT</b>
-━━━━━━━━━━━━━━━━
-👥 Total User     : ${totalUsers}
-🟢 User Aktif     : ${activeUsers}
-📦 Total Stok     : ${totalStock}
-💰 Total Saldo    : Rp ${totalBalance.toLocaleString()}
-🔥 Promo Aktif    : ${totalPromo}
-⏳ Uptime         : ${hours} Jam ${minutes} Menit
-
-Silahkan pilih aksi admin:`),
+            UI.q(panelText),
             {
                 parse_mode: 'HTML',
+                caption_entities: panelEntities,
                 ...Markup.inlineKeyboard([
 
                     [Markup.button.callback('➕ 𝗔𝗗𝗗 𝗦𝗧𝗢𝗞', 'adm_add')],
@@ -1449,12 +1668,16 @@ Silahkan pilih aksi admin:`),
 
 bot.action('adm_addsaldo', (ctx) => {
     userState[ctx.from.id] = { step: 'ADD_SALDO_TARGET' };
-    ctx.reply(UI.q("🆔 Masukkan <b>ID atau Username</b> user:"), { parse_mode: 'HTML' });
+    const addText = "🆔 Masukkan <b>ID atau Username</b> user:";
+    const addEntities = [createEmojiEntity(addText.indexOf('🆔'), 2, EMOJI.PIN)];
+    ctx.reply(UI.q(addText), { parse_mode: 'HTML', entities: addEntities });
 });
 
 bot.action('adm_minussaldo', (ctx) => {
     userState[ctx.from.id] = { step: 'MINUS_SALDO_TARGET' };
-    ctx.reply(UI.q("🆔 Masukkan <b>ID atau Username</b> user:"), { parse_mode: 'HTML' });
+    const minusText = "🆔 Masukkan <b>ID atau Username</b> user:";
+    const minusEntities = [createEmojiEntity(minusText.indexOf('🆔'), 2, EMOJI.PIN)];
+    ctx.reply(UI.q(minusText), { parse_mode: 'HTML', entities: minusEntities });
 });
 
 bot.action('adm_add', async (ctx) => {
@@ -1463,10 +1686,14 @@ bot.action('adm_add', async (ctx) => {
         btns.push(Markup.button.callback(`Kategori ${i}`, `add_cat_${i}`));
     }
 
+    const addCatText = "📂 <b>𝗣𝗜𝗟𝗜𝗛 𝗞𝗔𝗧𝗘𝗚𝗢𝗥𝗜:</b>";
+    const addCatEntities = [createEmojiEntity(addCatText.indexOf('📂'), 2, EMOJI.PIN)];
+
     await ctx.editMessageCaption(
-        UI.q("📂 <b>𝗣𝗜𝗟𝗜𝗛 𝗞𝗔𝗧𝗘𝗚𝗢𝗥𝗜:</b>"),
+        UI.q(addCatText),
         {
             parse_mode: 'HTML',
+            caption_entities: addCatEntities,
             ...Markup.inlineKeyboard(btns, { columns: 2 })
         }
     );
@@ -1476,10 +1703,14 @@ bot.action(/^add_cat_(\d+)$/, async (ctx) => {
     if (ctx.from.id !== CONFIG.ADMIN_ID) return;
     const cat = ctx.match[1];
 
+    const methodText = `📂 <b>KATEGORI ${cat}</b>\n\nSilahkan pilih metode penambahan akun:`;
+    const methodEntities = [createEmojiEntity(methodText.indexOf('📂'), 2, EMOJI.PIN)];
+
     await ctx.editMessageCaption(
-        UI.q(`📂 <b>KATEGORI ${cat}</b>\n\nSilahkan pilih metode penambahan akun:`),
+        UI.q(methodText),
         {
             parse_mode: 'HTML',
+            caption_entities: methodEntities,
             ...Markup.inlineKeyboard([
                 [Markup.button.callback('📩 VIA OTP', `method_otp_${cat}`)],
                 [Markup.button.callback('🔑 VIA STRING SESSION', `method_string_${cat}`)],
@@ -1492,18 +1723,25 @@ bot.action(/^add_cat_(\d+)$/, async (ctx) => {
 bot.action(/^method_otp_(\d+)$/, (ctx) => {
     const cat = ctx.match[1];
     userState[ctx.from.id] = { step: 'ADMIN_NAME', cat, method: 'OTP' };
-    ctx.reply(UI.q("👤 Masukkan <b>Nama Akun</b>:"), { parse_mode: 'HTML' });
+    const nameText = "👤 Masukkan <b>Nama Akun</b>:";
+    const nameEntities = [createEmojiEntity(nameText.indexOf('👤'), 2, EMOJI.STAR)];
+    ctx.reply(UI.q(nameText), { parse_mode: 'HTML', entities: nameEntities });
 });
 
 bot.action(/^method_string_(\d+)$/, (ctx) => {
     const cat = ctx.match[1];
     userState[ctx.from.id] = { step: 'ADMIN_PHONE', cat, method: 'STRING' };
-    ctx.reply(UI.q("🔑 Silahkan kirim <b>String Session</b> akun:"), { parse_mode: 'HTML' });
+    const stringText = "🔑 Silahkan kirim <b>String Session</b> akun:";
+    const stringEntities = [createEmojiEntity(stringText.indexOf('🔑'), 2, EMOJI.DIAMOND)];
+    ctx.reply(UI.q(stringText), { parse_mode: 'HTML', entities: stringEntities });
 });
 
 bot.action('adm_promo', async (ctx) => {
-    if (ctx.from.id !== CONFIG.ADMIN_ID)
-        return ctx.answerCbQuery('❌ Akses ditolak', { show_alert: true });
+    if (ctx.from.id !== CONFIG.ADMIN_ID) {
+        const promoDeniedText = '❌ Akses ditolak';
+        const promoDeniedEntities = [createEmojiEntity(promoDeniedText.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.answerCbQuery(promoDeniedText, { show_alert: true, entities: promoDeniedEntities });
+    }
 
     let btns = [];
     for (let i = 1; i <= 8; i++) {
@@ -1512,9 +1750,12 @@ bot.action('adm_promo', async (ctx) => {
         );
     }
 
+    const promoText = "🔥 <b>PILIH KATEGORI YANG INGIN DIPROMO</b>";
+    const promoEntities = [createEmojiEntity(promoText.indexOf('🔥'), 2, EMOJI.LIGHTNING)];
+
     await ctx.reply(
-        UI.q("🔥 <b>PILIH KATEGORI YANG INGIN DIPROMO</b>"),
-        { parse_mode: 'HTML', ...Markup.inlineKeyboard(btns, { columns: 2 }) }
+        UI.q(promoText),
+        { parse_mode: 'HTML', entities: promoEntities, ...Markup.inlineKeyboard(btns, { columns: 2 }) }
     );
 });
 
@@ -1528,38 +1769,54 @@ bot.action(/^promo_cat_(\d+)$/, (ctx) => {
         cat
     };
 
+    const setPromoText = `💰 Masukkan harga promo untuk Kategori ${cat}\n\nContoh: 3000`;
+    const setPromoEntities = [createEmojiEntity(setPromoText.indexOf('💰'), 2, EMOJI.MONEY_BAG)];
+
     ctx.reply(
-        UI.q(`💰 Masukkan harga promo untuk Kategori ${cat}\n\nContoh: 3000`),
-        { parse_mode: 'HTML' }
+        UI.q(setPromoText),
+        { parse_mode: 'HTML', entities: setPromoEntities }
     );
 });
 
 bot.action('adm_bc', (ctx) => {
-    if (ctx.from.id !== CONFIG.ADMIN_ID)
-        return ctx.answerCbQuery('❌ Akses ditolak', { show_alert: true });
+    if (ctx.from.id !== CONFIG.ADMIN_ID) {
+        const bcDeniedText = '❌ Akses ditolak';
+        const bcDeniedEntities = [createEmojiEntity(bcDeniedText.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.answerCbQuery(bcDeniedText, { show_alert: true, entities: bcDeniedEntities });
+    }
 
     userState[ctx.from.id] = { step: 'BROADCAST' };
 
+    const bcText = "📢 Kirim pesan yang ingin dibroadcast ke semua user:";
+    const bcEntities = [createEmojiEntity(bcText.indexOf('📢'), 2, EMOJI.BELL)];
+
     ctx.reply(
-        UI.q("📢 Kirim pesan yang ingin dibroadcast ke semua user:"),
-        { parse_mode: 'HTML' }
+        UI.q(bcText),
+        { parse_mode: 'HTML', entities: bcEntities }
     );
 });
 
 bot.action('adm_mt', async (ctx) => {
-    if (ctx.from.id !== CONFIG.ADMIN_ID)
-        return ctx.answerCbQuery('❌ Akses ditolak', { show_alert: true });
+    if (ctx.from.id !== CONFIG.ADMIN_ID) {
+        const mtDeniedText = '❌ Akses ditolak';
+        const mtDeniedEntities = [createEmojiEntity(mtDeniedText.indexOf('❌'), 2, EMOJI.X)];
+        return ctx.answerCbQuery(mtDeniedText, { show_alert: true, entities: mtDeniedEntities });
+    }
 
     const current = await getMaintenance();
     await setMaintenance(!current);
 
+    const mtText = !current
+        ? "🛠️ Maintenance AKTIF\nUser tidak bisa menggunakan bot."
+        : "✅ Maintenance NONAKTIF\nBot sudah normal kembali.";
+    
+    const mtEntities = !current
+        ? [createEmojiEntity(mtText.indexOf('🛠️'), 2, EMOJI.WARNING)]
+        : [createEmojiEntity(mtText.indexOf('✅'), 2, EMOJI.CHECKMARK)];
+
     ctx.reply(
-        UI.q(
-            !current
-                ? "🛠️ Maintenance AKTIF\nUser tidak bisa menggunakan bot."
-                : "✅ Maintenance NONAKTIF\nBot sudah normal kembali."
-        ),
-        { parse_mode: 'HTML' }
+        UI.q(mtText),
+        { parse_mode: 'HTML', entities: mtEntities }
     );
 });
 
@@ -1586,3 +1843,4 @@ startBot();
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
