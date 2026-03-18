@@ -12,7 +12,7 @@ const mongoose = require('mongoose');
 const CONFIG = {
     BOT_TOKEN: '8480950575:AAHia_I10prqfaqrngpa0RjPpUvw6senKFM',
     ADMIN_ID: 6816905895,
-    API_KEY_ATLANTIC: 'UbRba33Sh4A0sbAJ1MNnO2NU8gwMFut1unmIN1eUEKfQ3OKazcnV8XuXs87UdNu0cWwtcLbh2wXcdF2wVdzJE8VYrgi3PmT3lDS9',
+    API_KEY_ATLANTIC: 'tNsjYGvhNa3pHUd93AuiqcouNvyR8vsAwKJ9NETbk1CF3WdPTMXxAT1EPJjCU9nh14d5OqfHzaMka875teSDuPLPFcSsYkXXe7dn',
     BASE_URL_ATLANTIC: 'https://atlantich2h.com',
     API_ID: 31639742,
     API_HASH: '7c24cdee5f2b98ad27b0b8f0a07e566a',
